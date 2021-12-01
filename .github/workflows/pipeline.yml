@@ -13,10 +13,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      - name: Log markdown files
-        run: ls -l
-        working-directory: ./vimwiki_deploy
-      
       - name: Markdown to HTML
         env:
           text: ./vimwiki_deploy/index.md
@@ -27,6 +23,9 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Make dir '/var/www/html'
+        run: mkdir -p /var/www/html/
+      
       - name: Copy to '/var/www/html'
         run: cp *.html /var/www/html/
         
