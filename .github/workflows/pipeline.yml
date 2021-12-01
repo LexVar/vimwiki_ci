@@ -1,4 +1,4 @@
-name: CI
+name: Pipeline
 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -15,11 +15,11 @@ jobs:
       
       - name: Log markdown files
         run: ls -l
-        working-directory: $GITHUB_WORKSPACE
+        working-directory: ./vimwiki_deploy
       
       - name: Markdown to HTML
         env:
-          text: $GITHUB_WORKSPACE/index.md
+          text: ./vimwiki_deploy/index.md
           html: index.html
         uses: lifepal/markdown-to-html@v1.2
         
