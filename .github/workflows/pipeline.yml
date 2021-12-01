@@ -12,22 +12,24 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          path: tmp
       
-      - name: Markdown to HTML
-        env:
-          text: ./vimwiki_deploy/index.md
-          html: index.html
+      - name: Convert markdown to HTML
         uses: lifepal/markdown-to-html@v1.2
+        with:
+          text: $GITHUB_WORKSPACE/tmp/index.md
+          html: $GITHUB_WORKSPACE/index.html
         
   deploy:
     runs-on: self-hosted
 
     steps:
       - name: Make dir '/var/www/html'
-        run: mkdir -p /var/www/html/
+        run: sudo mkdir -p /var/www/html/
       
       - name: Copy to '/var/www/html'
-        run: cp *.html /var/www/html/
+        run: sudo cp $GITHUB_WORKSPACE/*.html /var/www/html/
         
       - name: Start nginx
-        run: systemctl start nginx
+        run: sudo systemctl start nginx
