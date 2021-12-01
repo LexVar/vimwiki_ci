@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      
+      - name: Log markdown files
+        run: ls -l
+      
+      - name: Markdown to HTML
+        env:
+          text: index.md
+          html: index.html
+        uses: lifepal/markdown-to-html@v1.2
+
+      - name: Copy to /var/www/html
+        run: cp index.html /var/www/html
+        
+      - name: Start nginx
+        run: systemctl start nginx
