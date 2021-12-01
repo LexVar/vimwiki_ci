@@ -13,10 +13,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      - name: Convert markdown to HTML
-        uses: lifepal/markdown-to-html@v1.2
+      - uses: ZacJW/markdown-html-action@1.1.0
         with:
-          text: $GITHUB_WORKSPACE/index.md
+          input_files: '["index.md"]'
+          output_files: '["index.html"]'
         
   deploy:
     # Dependency, needs build before deploy
