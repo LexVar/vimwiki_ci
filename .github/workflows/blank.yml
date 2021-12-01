@@ -9,22 +9,26 @@ jobs:
   build:
     runs-on: self-hosted
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
       - name: Log markdown files
         run: ls -l
+        working-directory: $GITHUB_WORKSPACE
       
       - name: Markdown to HTML
         env:
-          text: index.md
+          text: $GITHUB_WORKSPACE/index.md
           html: index.html
         uses: lifepal/markdown-to-html@v1.2
+        
+  deploy:
+    runs-on: self-hosted
 
-      - name: Copy to /var/www/html
-        run: cp index.html /var/www/html
+    steps:
+      - name: Copy to '/var/www/html'
+        run: cp *.html /var/www/html/
         
       - name: Start nginx
         run: systemctl start nginx
