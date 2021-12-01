@@ -12,16 +12,15 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-        with:
-          path: tmp
       
       - name: Convert markdown to HTML
         uses: lifepal/markdown-to-html@v1.2
         with:
-          text: $GITHUB_WORKSPACE/tmp/index.md
-          html: $GITHUB_WORKSPACE/index.html
+          text: $GITHUB_WORKSPACE/index.md
         
   deploy:
+    # Dependency, needs build before deploy
+    needs: build
     runs-on: self-hosted
 
     steps:
@@ -32,4 +31,6 @@ jobs:
         run: sudo cp $GITHUB_WORKSPACE/*.html /var/www/html/
         
       - name: Start nginx
-        run: sudo systemctl start nginx
+        run: |
+          sudo dnf install -y nginx
+          sudo systemctl start nginx
