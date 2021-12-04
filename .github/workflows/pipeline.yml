@@ -30,7 +30,7 @@ jobs:
 
       - name: Generate html
         run: |
-          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" .vimrc
+          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" $GITHUB_WORKSPACE/tmp/.vimrc
           cd $GITHUB_WORKSPACE/tmp && vim +VimwikiAll2HTML +q index.md
 
   deploy:
