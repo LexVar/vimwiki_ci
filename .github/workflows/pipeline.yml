@@ -24,13 +24,13 @@ jobs:
       - name: Install vimwiki
         run: stat ~/.vim/pack/plugins/start/vimwiki || git clone https://github.com/vimwiki/vimwiki.git ~/.vim/pack/plugins/start/vimwiki
 
-      - name: Generate markdown profiles
+      - name: Apply vimrc config
         run: |
+          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" $GITHUB_WORKSPACE/tmp/.vimrc
           cp $GITHUB_WORKSPACE/tmp/.vimrc /home/avalente/
 
       - name: Generate html
         run: |
-          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" $GITHUB_WORKSPACE/tmp/.vimrc
           cd $GITHUB_WORKSPACE/tmp && vim +VimwikiAll2HTML +q index.md
 
   deploy:
@@ -44,7 +44,6 @@ jobs:
       
       - name: Copy to '/var/www/html'
         run: |
-          sudo rm -r /var/www/html/*
           sudo cp -r $GITHUB_WORKSPACE/tmp/site_html/* /var/www/html/
         
       - name: Setup apache
