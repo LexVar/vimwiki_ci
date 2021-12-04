@@ -10,14 +10,29 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      
-      - uses: ZacJW/markdown-html-action@1.1.0
+      - name: Install vimwiki markdown dependencies
+        run: |
+          sudo mkdir -p /home/avalente/.vim/pack/plugins/start
+          sudo dnf install python3 vim git -y
+          pip3 install --user vimwiki_markdown
+
+      - name: Clone repo
+        uses: actions/checkout@v2
         with:
-          input_files: '["index.md"]'
-          output_files: '["index.html"]'
-        
+          path: 'tmp'
+
+      - name: Install vimwiki
+        run: stat ~/.vim/pack/plugins/start/vimwiki || git clone https://github.com/vimwiki/vimwiki.git ~/.vim/pack/plugins/start/vimwiki
+
+      - name: Generate markdown profiles
+        run: |
+          cp $GITHUB_WORKSPACE/tmp/.vimrc /home/avalente/
+
+      - name: Generate html
+        run: |
+          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" .vimrc
+          cd $GITHUB_WORKSPACE/tmp && vim +VimwikiAll2HTML +q index.md
+
   deploy:
     # Dependency, needs build before deploy
     needs: build
@@ -28,9 +43,13 @@ jobs:
         run: sudo mkdir -p /var/www/html/
       
       - name: Copy to '/var/www/html'
-        run: sudo cp $GITHUB_WORKSPACE/*.html /var/www/html/
-        
-      - name: Start nginx
         run: |
-          sudo dnf install -y nginx
-          sudo systemctl start nginx
+          sudo rm -r /var/www/html/*
+          sudo cp -r $GITHUB_WORKSPACE/tmp/site_html/* /var/www/html/
+        
+      - name: Setup apache
+        run: |
+          sudo dnf install -y httpd
+          sudo sed -i "s:Listen 80:Listen 81:" /etc/httpd/conf/httpd.conf
+          sudo systemctl enable httpd
+          sudo systemctl restart httpd
