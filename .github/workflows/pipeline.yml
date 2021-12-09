@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: 'tmp'
+          repository: 'git@github.com:LexVar/notes.git'
+          ssh-key: '/home/avalente/.ssh/vimwiki-repo'
 
       - name: Install vimwiki
         run: stat ~/.vim/pack/plugins/start/vimwiki || git clone https://github.com/vimwiki/vimwiki.git ~/.vim/pack/plugins/start/vimwiki
