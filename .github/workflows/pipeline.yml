@@ -20,20 +20,25 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: 'tmp'
-          repository: 'git@github.com:LexVar/notes.git'
-          ssh-key: '/home/avalente/.ssh/vimwiki-repo'
+
+      - name: Clone notes repo
+        uses: actions/checkout@v2
+        with:
+          path: 'notes'
+          repository: 'LexVar/notes'
+          ssh-key: ${{ secrets.REPO_PRIVATE_KEY }}
 
       - name: Install vimwiki
         run: stat ~/.vim/pack/plugins/start/vimwiki || git clone https://github.com/vimwiki/vimwiki.git ~/.vim/pack/plugins/start/vimwiki
 
       - name: Apply vimrc config
         run: |
-          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/tmp:" $GITHUB_WORKSPACE/tmp/.vimrc
+          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/notes:" $GITHUB_WORKSPACE/tmp/.vimrc
           cp $GITHUB_WORKSPACE/tmp/.vimrc /home/avalente/
 
       - name: Generate html
         run: |
-          cd $GITHUB_WORKSPACE/tmp && vim +VimwikiAll2HTML +q index.md
+          cd $GITHUB_WORKSPACE/notes && vim +VimwikiAll2HTML +q index.md
 
   deploy:
     # Dependency, needs build before deploy
@@ -46,7 +51,7 @@ jobs:
       
       - name: Copy to '/var/www/html'
         run: |
-          sudo cp -r $GITHUB_WORKSPACE/tmp/site_html/* /var/www/html/
+          sudo cp -r $GITHUB_WORKSPACE/notes/site_html/* /var/www/html/
         
       - name: Setup apache
         run: |
