@@ -4,47 +4,48 @@ on:
   workflow_dispatch:
 
 jobs:
-  Dependencies:
-    runs-on: self-hosted
-
-    steps:
-      - name: Install vimwiki markdown dependencies
-        run: |
-          mkdir -p /home/avalente/.vim/pack/plugins/start
-          sudo dnf install python3 vim git -y
-          pip3 install --user vimwiki_markdown
-
-      - name: Install vimwiki
-        run: |
-          stat /home/avalente/.vim/pack/plugins/start/vimwiki || git clone https://github.com/vimwiki/vimwiki.git /home/avalente/.vim/pack/plugins/start/vimwiki
-
-  Build:
-    needs: Dependencies
+  Container:
     runs-on: self-hosted
 
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
         with:
-          path: 'tmp'
+          path: 'repo'
 
+      - name: Build container
+        run: docker build -t docker.io/lexvar/vimwiki-build:latest repo/
+
+      # - name: Login to dockerhub
+      #   run: docker login -u lexvar -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }} docker.io
+      # - name: Push container to dockerhub
+      #   run: docker build -t vimwiki-build:latest repo/
+
+  Build:
+    needs: Container
+    runs-on: self-hosted
+
+    container:
+      image: docker.io/lexvar/vimwiki-build:latest
+
+    steps:
       - name: Clone notes repo
         uses: actions/checkout@v2
         with:
-          path: 'notes'
+          path: '/root/vimwiki'
           ref: 'master'
           repository: 'LexVar/notes'
           ssh-key: ${{ secrets.REPO_PRIVATE_KEY }}
 
-      - name: Apply vimrc config
-        run: |
-          sed -i "s:\$VIMWIKI:$GITHUB_WORKSPACE/notes:" $GITHUB_WORKSPACE/tmp/.vimrc
-          cp $GITHUB_WORKSPACE/tmp/.vimrc /home/avalente/
-
       - name: Generate html from markdown
         run: |
-          cd $GITHUB_WORKSPACE/notes
+          cd /root/vimwiki
           vim +VimwikiAll2HTML +q index.md
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vimwiki-html
+          path: /root/vimwiki/site_html/*
 
   Deploy:
     needs: Build
@@ -53,14 +54,15 @@ jobs:
     steps:
       - name: Make dir '/var/www/html'
         run: sudo mkdir -p /var/www/html/
-      
-      - name: Copy to '/var/www/html'
-        run: |
-          sudo cp -r $GITHUB_WORKSPACE/notes/site_html/* /var/www/html/
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: vimwiki-html
+          path: '/var/www/html'
         
       - name: Setup apache
         run: |
           sudo dnf install -y httpd
-          sudo sed -i "s:Listen 80:Listen 81:" /etc/httpd/conf/httpd.conf
+          sudo sed -i "s:Listen 80:Listen 8080:" /etc/httpd/conf/httpd.conf
           sudo systemctl enable httpd
           sudo systemctl restart httpd
