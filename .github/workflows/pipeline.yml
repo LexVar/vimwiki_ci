@@ -25,31 +25,11 @@ jobs:
           tags: docker.io/lexvar/vimwiki-build:latest
 
   Build:
-    # runs-on: [self-hosted, linux, x64]
+    needs: Container
     runs-on: ubuntu-latest
 
-    # container:
-    #   image: docker.io/lexvar/vimwiki-build:1.0
-
     steps:
-      # - name: Clone notes repo
-      #   uses: actions/checkout@v2
-      #   with:
-      #     path: 'vimwiki'
-      #     ref: 'master'
-      #     repository: 'LexVar/notes'
-      #     token: ${{ secrets.REPO_TOKEN }}
-
-      # - name: Move to vimwiki folder
-      #   run: mv vimwiki /root/
-
-      # - name: Substitute vimwiki dir
-      #   run: sed -i "s:\$HOME:$(pwd):g" /root/.vimrc
-
-      # - name: Generate html from markdown
-      #   run: cd /root/vimwiki && vim +VimwikiAll2HTML +q index.md
-
-      - name: Clone repo and generate markdown
+      - name: Clone repo and generate markdown inside container
         run: |
           NAME=$(docker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0)
           docker exec $NAME git clone https://${{ secrets.REPO_TOKEN }}@github.com/LexVar/notes.git /root/vimwiki
@@ -68,7 +48,13 @@ jobs:
     runs-on: [self-hosted, linux, arm64, raspi]
 
     steps:
-      - name: Make dir '/var/www/html'
+      - name: Setup apache
+        run: |
+          sudo dnf install -y httpd
+          sudo sed -i "s:^Listen .*:Listen 8080:" /etc/httpd/conf/httpd.conf
+          sudo systemctl enable httpd
+
+      - name: Make dirs
         run: |
           sudo mkdir -p /var/www/html/
           mkdir -p html
@@ -78,13 +64,8 @@ jobs:
           name: vimwiki-html
           path: 'html'
         
-      - name: Deploy artifacts
-        run: |
-          sudo cp -r html/* /var/www/html/
+      - name: Deploy generated html files
+        run: sudo cp -r html/* /var/www/html/
 
-      - name: Setup apache
-        run: |
-          sudo dnf install -y httpd
-          sudo sed -i "s:^Listen .*:Listen 8080:" /etc/httpd/conf/httpd.conf
-          sudo systemctl enable httpd
-          sudo systemctl restart httpd
+      - name: Restart apache
+        run: sudo systemctl restart httpd
