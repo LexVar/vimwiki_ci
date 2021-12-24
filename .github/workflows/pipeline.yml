@@ -5,64 +5,86 @@ on:
 
 jobs:
   Container:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
+
+      # - name: Login to DockerHub
+      #   uses: docker/login-action@v1
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push vimwiki-build image
+        uses: docker/build-push-action@v2
         with:
-          path: 'repo'
-
-      - name: Build container
-        run: docker build -t docker.io/lexvar/vimwiki-build:latest repo/
-
-      # - name: Login to dockerhub
-      #   run: docker login -u lexvar -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }} docker.io
-      # - name: Push container to dockerhub
-      #   run: docker build -t vimwiki-build:latest repo/
+          context: .
+          push: false # change to true to push
+          tags: docker.io/lexvar/vimwiki-build:latest
 
   Build:
-    needs: Container
-    runs-on: self-hosted
+    # runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
-    container:
-      image: docker.io/lexvar/vimwiki-build:latest
+    # container:
+    #   image: docker.io/lexvar/vimwiki-build:1.0
 
     steps:
-      - name: Clone notes repo
-        uses: actions/checkout@v2
-        with:
-          path: '/root/vimwiki'
-          ref: 'master'
-          repository: 'LexVar/notes'
-          ssh-key: ${{ secrets.REPO_PRIVATE_KEY }}
+      # - name: Clone notes repo
+      #   uses: actions/checkout@v2
+      #   with:
+      #     path: 'vimwiki'
+      #     ref: 'master'
+      #     repository: 'LexVar/notes'
+      #     token: ${{ secrets.REPO_TOKEN }}
 
-      - name: Generate html from markdown
+      # - name: Move to vimwiki folder
+      #   run: mv vimwiki /root/
+
+      # - name: Substitute vimwiki dir
+      #   run: sed -i "s:\$HOME:$(pwd):g" /root/.vimrc
+
+      # - name: Generate html from markdown
+      #   run: cd /root/vimwiki && vim +VimwikiAll2HTML +q index.md
+
+      - name: Clone repo and generate markdown
         run: |
-          cd /root/vimwiki
-          vim +VimwikiAll2HTML +q index.md
+          NAME=$(docker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0)
+          docker exec $NAME git clone https://${{ secrets.REPO_TOKEN }}@github.com/LexVar/notes.git /root/vimwiki
+          docker exec $NAME sh -c "cd /root/vimwiki && vim +VimwikiAll2HTML +q index.md && cp -r /root/vimwiki/site_html /tmp/vimwiki/"
+
+          # cleanup
+          docker stop $NAME && docker rm $NAME
 
       - uses: actions/upload-artifact@v2
         with:
           name: vimwiki-html
-          path: /root/vimwiki/site_html/*
+          path: site_html/*
 
   Deploy:
     needs: Build
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, arm64, raspi]
 
     steps:
       - name: Make dir '/var/www/html'
-        run: sudo mkdir -p /var/www/html/
+        run: |
+          sudo mkdir -p /var/www/html/
+          mkdir -p html
 
       - uses: actions/download-artifact@v2
         with:
           name: vimwiki-html
-          path: '/var/www/html'
+          path: 'html'
         
+      - name: Deploy artifacts
+        run: |
+          sudo cp -r html/* /var/www/html/
+
       - name: Setup apache
         run: |
           sudo dnf install -y httpd
-          sudo sed -i "s:Listen 80:Listen 8080:" /etc/httpd/conf/httpd.conf
+          sudo sed -i "s:^Listen .*:Listen 8080:" /etc/httpd/conf/httpd.conf
           sudo systemctl enable httpd
           sudo systemctl restart httpd
