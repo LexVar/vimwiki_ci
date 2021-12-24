@@ -31,11 +31,17 @@ jobs:
     steps:
       - name: Clone repo and generate markdown inside container
         run: |
+          echo -e "Starting container\ndocker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0"
           NAME=$(docker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0)
+
+          echo -e "Pulling the vimwiki notes repo"
           docker exec $NAME git clone https://${{ secrets.REPO_TOKEN }}@github.com/LexVar/notes.git /root/vimwiki
+
+          echo -e "Generating markdown files\ncd /root/vimwiki && vim +VimwikiAll2HTML +q index.md && cp -r /root/vimwiki/site_html /tmp/vimwiki/"
           docker exec $NAME sh -c "cd /root/vimwiki && vim +VimwikiAll2HTML +q index.md && cp -r /root/vimwiki/site_html /tmp/vimwiki/"
 
           # cleanup
+          echo -e "Stopping and removing container $NAME"
           docker stop $NAME && docker rm $NAME
 
       - uses: actions/upload-artifact@v2
