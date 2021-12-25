@@ -1,0 +1,42 @@
+- hosts: localhost
+  gather_facts: false
+
+  vars:
+    - container_vimwiki: '/root/vimwiki'
+    - container_name: 'vimwiki-build'
+
+  tasks:
+    - name: Install python dependencies
+      pip:
+        name: "{{ item }}"
+      loop:
+        - requests
+        - docker
+
+    - name: Start build container
+      shell: docker run -dt -v "$PWD/..:/tmp/vimwiki" --name vimwiki-build docker.io/lexvar/vimwiki-build:1.0
+
+    # - name: Start build container
+    #   community.docker.docker_container:
+    #     name: "{{ container_name }}"
+    #     state: present
+    #     image: lexvar/vimwiki-build:1.0
+    #     volumes:
+    #       - "../:/tmp/vimwiki"
+
+    - name: Copy vimwiki notes to vimwiki container directory
+      community.docker.docker_container_exec:
+        container: "{{ container_name }}"
+        command: /bin/sh -c "cp -r vimwiki /root/"
+        chdir: "/tmp/vimwiki"
+
+    - name: Generate html files
+      community.docker.docker_container_exec:
+        container: "{{ container_name }}"
+        command: /bin/sh -c "vim +VimwikiAll2HTML +q index.md && cp -r site_html /tmp/vimwiki/"
+        chdir: "{{ container_vimwiki }}"
+
+    - name: Stop and remove container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent

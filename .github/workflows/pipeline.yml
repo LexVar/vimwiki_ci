@@ -29,20 +29,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone repo and generate markdown inside container
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Clone notes repo
+        uses: actions/checkout@v2
+        with:
+          path: 'vimwiki'
+          ref: 'master'
+          repository: 'LexVar/notes'
+          token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Install ansible and collections
         run: |
-          echo -e "Starting container\ndocker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0"
-          NAME=$(docker run -dt -v $PWD:/tmp/vimwiki docker.io/lexvar/vimwiki-build:1.0)
+          sudo apt -y install ansible python3
+          ansible-galaxy collection install -r requirements.yml
 
-          echo -e "Pulling the vimwiki notes repo"
-          docker exec $NAME git clone https://${{ secrets.REPO_TOKEN }}@github.com/LexVar/notes.git /root/vimwiki
-
-          echo -e "Generating markdown files\ncd /root/vimwiki && vim +VimwikiAll2HTML +q index.md && cp -r /root/vimwiki/site_html /tmp/vimwiki/"
-          docker exec $NAME sh -c "cd /root/vimwiki && vim +VimwikiAll2HTML +q index.md && cp -r /root/vimwiki/site_html /tmp/vimwiki/"
-
-          # cleanup
-          echo -e "Stopping and removing container $NAME"
-          docker stop $NAME && docker rm $NAME
+      - name: Buid html files in docker container
+        run: ansible-playbook ./playbooks/build.yml -c local
+        env:
+          ANSIBLE_FORCE_COLOR: '1'
 
       - uses: actions/upload-artifact@v2
         with:
@@ -65,8 +71,10 @@ jobs:
       - name: Install ansible and collections
         run: |
           sudo dnf -y install epel-release
-          sudo dnf -y install ansible
-          ansible-galaxy install -r requirements.yml ./playbooks/deploy.yml
+          sudo dnf -y install ansible python3
+          ansible-galaxy collection install -r requirements.yml
 
       - name: Deploy website
         run: ansible-playbook ./playbooks/deploy.yml -c local
+        env:
+          ANSIBLE_FORCE_COLOR: '1'
