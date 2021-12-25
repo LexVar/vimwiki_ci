@@ -54,24 +54,19 @@ jobs:
     runs-on: [self-hosted, linux, arm64, raspi]
 
     steps:
-      - name: Setup apache
-        run: |
-          sudo dnf install -y httpd
-          sudo sed -i "s:^Listen .*:Listen 8080:" /etc/httpd/conf/httpd.conf
-          sudo systemctl enable httpd
-
-      - name: Make dirs
-        run: |
-          sudo mkdir -p /var/www/html/
-          mkdir -p html
+      - name: Clone repo
+        uses: actions/checkout@v2
 
       - uses: actions/download-artifact@v2
         with:
           name: vimwiki-html
           path: 'html'
-        
-      - name: Deploy generated html files
-        run: sudo cp -r html/* /var/www/html/
 
-      - name: Restart apache
-        run: sudo systemctl restart httpd
+      - name: Install ansible and collections
+        run: |
+          sudo dnf -y install epel-release
+          sudo dnf -y install ansible
+          ansible-galaxy install -r requirements.yml ./playbooks/deploy.yml
+
+      - name: Deploy website
+        run: ansible-playbook ./playbooks/deploy.yml -c local

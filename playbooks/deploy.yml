@@ -1,0 +1,40 @@
+- hosts: localhost
+  gather_facts: false
+
+  vars:
+    - httpd_path: '/var/www/html'
+    - httpd_container_path: '/usr/local/apache2/htdocs'
+
+  tasks:
+    - name: Install dependencies
+      yum:
+        state: present
+        name: "{{ item }}"
+      loop:
+        - rsync
+        - python3-docker
+      become: true
+
+    - name: Create directory "{{ httpd_path }}"
+      file:
+        path: "{{ httpd_path }}"
+        state: directory
+        mode: '0755'
+      become: true
+
+    - name: Synchronization html files
+      synchronize:
+        src: html/
+        dest: "{{ httpd_path }}"
+      become: true
+
+    - name: Setup httpd container
+      docker_container:
+        name: vimwiki-webserver
+        state: started
+        restart_policy: always
+        image: httpd:alpine3.15
+        ports:
+          - 8080:80/tcp
+        volumes:
+          - "{{ httpd_path }}:{{ httpd_container_path }}"
