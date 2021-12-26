@@ -1,19 +1,14 @@
 - hosts: localhost
   gather_facts: false
 
-  vars:
-    - httpd_path: '/var/www/html'
-    - httpd_container_path: '/usr/local/apache2/htdocs'
-    - container_name: 'vimwiki-webserver'
-    - host_port: '8080'
+  vars_files:
+    - vars.yml
 
   tasks:
     - name: Install python dependencies
       pip:
         name: "{{ item }}"
-      loop:
-        - requests
-        - docker
+      loop: "{{ packages }}"
 
     - name: Install dependencies
       yum:
@@ -38,10 +33,10 @@
 
     - name: Setup httpd container
       docker_container:
-        name: "{{ container_name }}"
+        name: "{{ web_container_name }}"
         state: present
         restart_policy: always
-        image: httpd:alpine3.15
+        image: "{{ webserver_image }}"
         ports:
           - "{{ host_port }}:80/tcp"
         volumes:

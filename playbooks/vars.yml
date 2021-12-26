@@ -1,0 +1,21 @@
+# General
+packages:
+  - requests
+  - docker
+
+# Webserver variables
+webserver_image: 'httpd:alpine3.15'
+httpd_path: '/var/www/html'
+httpd_container_path: '/usr/local/apache2/htdocs'
+host_port: '8080'
+web_container_name: 'vimwiki-webserver'
+
+# Build variables
+image_name: 'docker.io/lexvar/vimwiki-build'
+image_tag: '1.0'
+container_vimwiki: '/root/vimwiki'
+container_name: 'vimwiki-build'
+
+# DockerHub
+dockerfile_path: '../docker'
+dockerhub_username: 'lexvar'

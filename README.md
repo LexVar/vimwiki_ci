@@ -25,4 +25,6 @@ The repo includes an alpine based image ready to convert vimwiki markdown files 
 The output html files will be inside the `/root/vimwiki/site_html` directory.
 ## Tools
 
+- ansible v2.9+
+- docker
 - [vimwiki_markdown](https://github.com/WnP/vimwiki_markdown)
