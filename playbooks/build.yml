@@ -13,16 +13,14 @@
         - requests
         - docker
 
-    - name: Start build container
-      shell: docker run -dt -v "$PWD/..:/tmp/vimwiki" --name vimwiki-build docker.io/lexvar/vimwiki-build:1.0
+    - name: "Check running containers named: {{ container_name }}"
+      shell: docker ps | grep "{{ container_name }}"
+      ignore_errors: true
+      register: result
 
-    # - name: Start build container
-    #   community.docker.docker_container:
-    #     name: "{{ container_name }}"
-    #     state: present
-    #     image: lexvar/vimwiki-build:1.0
-    #     volumes:
-    #       - "../:/tmp/vimwiki"
+    - name: Start build container
+      command: docker run -dt -v "$PWD/..:/tmp/vimwiki" --name vimwiki-build docker.io/lexvar/vimwiki-build:1.0
+      when: result.rc != 0
 
     - name: Copy vimwiki notes to vimwiki container directory
       community.docker.docker_container_exec:
