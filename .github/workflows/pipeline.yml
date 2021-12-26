@@ -11,18 +11,16 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v2
 
-      # - name: Login to DockerHub
-      #   uses: docker/login-action@v1
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Install ansible and collections
+        run: |
+          sudo apt -y install ansible python3
+          ansible-galaxy collection install -r requirements.yml
 
-      - name: Build and push vimwiki-build image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: false # change to true to push
-          tags: docker.io/lexvar/vimwiki-build:latest
+      - name: Build and push container image
+        run: ansible-playbook ./playbooks/build-image.yml -c local
+        env:
+          ANSIBLE_FORCE_COLOR: '1'
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   Build:
     needs: Container

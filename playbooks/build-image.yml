@@ -1,0 +1,28 @@
+- hosts: localhost
+  gather_facts: false
+
+  vars:
+    - image_name: 'docker.io/lexvar/vimwiki-build:1.0'
+    - image_tag: '1.0'
+
+  tasks:
+    - name: Install python dependencies
+      pip:
+        name: "{{ item }}"
+      loop:
+        - requests
+        - docker
+
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        username: lexvar
+        password: "{{ lookup('env','DOCKERHUB_TOKEN') }}"
+
+    - name: Build image
+      community.docker.docker_image:
+        build:
+          path: ../
+        name: docker.io/lexvar/vimwiki-build
+        tag: "1.0"
+        push: true
+        source: build
