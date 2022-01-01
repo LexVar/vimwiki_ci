@@ -51,7 +51,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: vimwiki-html
-          path: site_html/*
+          path: vimwiki/site_html/*
 
   Deploy:
     needs: Build

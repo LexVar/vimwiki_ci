@@ -8,7 +8,7 @@
     - name: Install python dependencies
       pip:
         name: "{{ item }}"
-      loop: "{{ packages }}"
+      loop: "{{ pip_packages }}"
 
     - name: Log into DockerHub
       community.docker.docker_login:
