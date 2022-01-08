@@ -10,31 +10,12 @@
         name: "{{ item }}"
       loop: "{{ pip_packages }}"
 
-    - name: "Check running containers named: {{ container_name }}"
-      shell: docker ps -a | grep "{{ container_name }}"
-      ignore_errors: true
-      register: result
-
-    - name: Stop and remove existing container
-      community.docker.docker_container:
+    - name: Start new build container; Generate HTML files
+      docker_container:
         name: "{{ container_name }}"
-        state: absent
-      when: result.rc == 0
-
-    - name: Start new build container
-      command: docker run -dt -v "{{ host_vimwiki_path }}:/root/vimwiki" --name "{{ container_name }}" "{{ image_name }}:{{ image_tag }}"
-
-    - name: Run tasks inside container
-      block:
-        - name: Generate html files
-          community.docker.docker_container_exec:
-            container: "{{ container_name }}"
-            command: /bin/sh -c "vim +VimwikiAll2HTML +q index.md"
-            chdir: "{{ container_vimwiki }}"
-
-      # Always stop and remove container, even on failure
-      always:
-        - name: Stop and remove container
-          community.docker.docker_container:
-            name: "{{ container_name }}"
-            state: absent
+        state: started
+        image: "{{ image_name }}:{{ image_tag }}"
+        cleanup: true
+        detach: false
+        volumes:
+          - "{{ host_vimwiki_path }}:/root/vimwiki"

@@ -13,7 +13,7 @@ host_artifacts_path: '{{ playbook_dir }}/../html/'
 
 # Build variables
 image_name: 'docker.io/lexvar/vimwiki-build'
-image_tag: '1.0'
+image_tag: 'latest'
 container_vimwiki: '/root/vimwiki'
 host_vimwiki_path: '{{ playbook_dir }}/../vimwiki'
 container_name: 'vimwiki-build'

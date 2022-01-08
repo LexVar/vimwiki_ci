@@ -1,19 +1,21 @@
-FROM docker.io/library/alpine:3.15
+FROM docker.io/library/alpine:3.15 as builder
 
-# Install dependencies
-## Install vim
-RUN apk update
-RUN apk add vim
+## Install vimwiki_markdown
+RUN apk add --update py3-pip && \
+pip3 install --user vimwiki_markdown
 
-## Install git
-RUN apk add git
-## Install pip
-RUN apk add py3-pip
+## Install vimwiki
+RUN apk add git && \
+git clone https://github.com/vimwiki/vimwiki.git $HOME/.vim/pack/plugins/start/vimwiki
 
 ADD .vimrc /root/
 
-## Install vimwiki_markdown
-RUN pip3 install vimwiki_markdown
+FROM docker.io/library/alpine:3.15
+COPY --from=builder \
+	/root			\
+	/root
 
-## Install vimwiki
-RUN git clone https://github.com/vimwiki/vimwiki.git $HOME/.vim/pack/plugins/start/vimwiki
+# Install vim and python3
+RUN apk add --update --no-cache vim python3
+
+CMD ["/usr/bin/vim", "+VimwikiIndex", "+VimwikiAll2HTML", "+q"]

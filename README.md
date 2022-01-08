@@ -13,16 +13,16 @@ The repo includes an alpine based image ready to convert vimwiki markdown files 
 
 ### Usage
 
-1. Pull and run the [image](https://hub.docker.com/repository/docker/lexvar/vimwiki-build): 
+1. Pull the [image](https://hub.docker.com/repository/docker/lexvar/vimwiki-build): 
    
-		docker pull docker.io/lexvar/vimwiki-build:1.0
+		docker pull docker.io/lexvar/vimwiki-build:latest
 
-2. Copy your vimwiki markdown directory to /root/vimwiki
-3. Inside the directory run:
-    
-        vim +VimwikiAll2HTML +q index.md
+2. Run the container with the vimwiki volume mounted to `/root/vimwiki`:
 
-The output html files will be inside the `/root/vimwiki/site_html` directory.
+		docker run -it -v $PWD/vimwiki:/root/vimwiki docker.io/lexvar/vimwiki-build:latest
+
+The output html files will be inside the `vimwiki/site_html` directory.
+
 ## Tools
 
 - ansible v2.9+
