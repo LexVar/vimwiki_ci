@@ -7,7 +7,7 @@ pip_packages:
 webserver_image: 'httpd:alpine3.15'
 httpd_path: '/var/www/html/'
 httpd_container_path: '/usr/local/apache2/htdocs'
-host_port: '8080'
+host_port: '127.0.0.1:8080'
 web_container_name: 'vimwiki-webserver'
 host_artifacts_path: '{{ playbook_dir }}/../html/'
 
