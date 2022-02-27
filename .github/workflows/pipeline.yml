@@ -36,7 +36,7 @@ jobs:
           path: 'vimwiki'
           ref: 'master'
           repository: 'LexVar/notes'
-          token: ${{ secrets.REPO_TOKEN }}
+          ssh-key: ${{ secrets.REPO_NOTES_KEY }}
 
       - name: Install ansible and collections
         run: |
